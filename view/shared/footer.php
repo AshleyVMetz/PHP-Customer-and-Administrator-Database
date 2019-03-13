@@ -1,7 +1,7 @@
 
 <footer>
     <p class="copyright">
-        &copy; <?php echo date("Y"); ?> SportsPro, Inc.
+        &copy; <?php echo date("Y"); ?> Ashley's SportsPro, Inc.
     </p>
 </footer>
 </body>
