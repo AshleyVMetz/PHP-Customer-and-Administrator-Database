@@ -66,6 +66,5 @@
         <input type="submit" value="Update Customer"><br>
     </form>
     <p><a href=".?action=customer_search">Search Customers</a></p>
-
 </main>
 <?php include '../view/shared/footer.php'; ?>
