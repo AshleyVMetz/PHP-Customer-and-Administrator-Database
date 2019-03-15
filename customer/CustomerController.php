@@ -64,7 +64,6 @@ class CustomerController {
     }
 
     private function processGetCustomer() {
-        
         $email = filter_input(INPUT_POST, 'email');
         $password = filter_input(INPUT_POST, 'password');
         $customer_table = new CustomerTable($this->db);
