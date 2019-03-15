@@ -11,5 +11,15 @@
         <li><a href="?action=under_construction">Display Incidents</a></li>
     </ul>
     </nav>
+    <h2>Login Status</h2>
+        <p><?php echo $successMessage; ?></p>
+      
+         <form action="." method="post" id="aligned">
+            <input type="hidden" name="action" 
+                   value="logout">
+            <input type="hidden" name="username" 
+                   value="<?php echo htmlspecialchars($admin['username']); ?>">
+            <input type="submit" value="Logout" />
+        </form>
 </main>
 <?php include '../view/shared/footer.php'; ?>
