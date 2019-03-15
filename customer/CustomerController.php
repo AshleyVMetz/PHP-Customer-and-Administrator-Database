@@ -1,5 +1,6 @@
 <?php
 require_once '../model/Database.php';
+require_once '../util/secure_conn.php';
 require_once '../model/ProductTable.php';
 require_once '../model/CustomerTable.php';
 require_once '../model/RegistrationTable.php';
@@ -10,6 +11,7 @@ class CustomerController {
     
     public function __construct() {
         $this->action = '';
+        $this->startSession();
         $this->db = new Database();
         if (!$this->db->isConnected()) {
             $error_message = $this->db->getErrorMessage();
@@ -29,8 +31,14 @@ class CustomerController {
             case 'get_customer':
                 $this->processGetCustomer();
                 break;
+            case 'show_registration':
+                $this->processShowRegistration();
+                break;
             case 'register_product':
                 $this->processRegisterProduct();
+                break;
+            case 'logout':
+                $this->processLogout();
                 break;
             default:
                 $this->processCustomerLogin();
@@ -42,22 +50,41 @@ class CustomerController {
      * Process Request
      ***************************************************************/
     private function processCustomerLogin() {
-        $email = '';
-        include '../view/customer/customer_login.php';
-    }
-    
-    private function processGetCustomer() {
-        $email = filter_input(INPUT_POST, 'email');
-        $customer_table = new CustomerTable($this->db);
-        $customer = $customer_table->get_customer_by_email($email);
-        if ($customer == false) {
-            $error = "Invalid email address";
-            include('../view/errors/error.php');
-        } else {
+        //Check if user already logged in
+        if(!empty( $_SESSION['loggedin'])){
+            $customer = $_SESSION['customer'];
             $product_table = new ProductTable($this->db);
             $products = $product_table->get_products();
             include '../view/customer/product_register.php';
+        }else{
+            $email = '';
+            $password = '';
+            include '../view/customer/customer_login.php';
         }
+    }
+
+    private function processGetCustomer() {
+        
+        $email = filter_input(INPUT_POST, 'email');
+        $password = filter_input(INPUT_POST, 'password');
+        $customer_table = new CustomerTable($this->db);
+        $validationResult = $customer_table->isValidLogin($email, $password);
+        if ($validationResult !== false) {
+            $customer = $customer_table->get_customer($validationResult);
+            $_SESSION['loggedin'] = true;
+            $_SESSION['customer'] = $customer;
+            $product_table = new ProductTable($this->db);
+            $products = $product_table->get_products();
+            $success = "You are logged in as $email";
+            include '../view/customer/product_register.php';
+        } else {
+            $error = 'Invalid username or password';
+            include '../view/customer/customer_login.php';
+        }
+        
+        
+        
+        
     }
     
     private function processRegisterProduct() {
@@ -67,6 +94,19 @@ class CustomerController {
         $registration_table->add_registration($customer_id, $product_code);
         $message = "Product ($product_code) was registered successfully.";
         include '../view/customer/product_register.php';
+    }
+    
+    private function processLogout() {
+        $_SESSION = array();   
+        session_destroy();     
+        $logout= 'You have been successfully logged out.';
+        $email = '';
+        $password = '';
+        include '../view/customer/customer_login.php';
+    }
+    
+    private function startSession() {
+        session_start();
     }
 }
 
