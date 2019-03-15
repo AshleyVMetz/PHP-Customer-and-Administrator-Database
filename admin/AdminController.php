@@ -1,15 +1,21 @@
 <?php
 require_once '../model/Database.php';
+require_once '../util/secure_conn.php';
 require_once '../model/ProductTable.php';
 require_once '../model/CustomerTable.php';
+require_once '../model/AdminTable.php';
 require_once '../util/Util.php';
+require('../model/fields.php');
+require('../model/validate.php');
 
 class AdminController {
     private $action;
     
     public function __construct() {
+        $this->startSession();
         $this->action = '';
         $this->db = new Database();
+        $this->validate = new Validate();
         if (!$this->db->isConnected()) {
             $error_message = $this->db->getErrorMessage();
             include '../view/errors/database_error.php';
@@ -49,8 +55,17 @@ class AdminController {
             case 'display_customers':
                 $this->processDisplayCustomers();
                 break;
-            default:
+            case 'admin_menu':
                 $this->processAdminMenu();
+                break;
+            case 'get_admin':
+                $this->processGetAdmin();
+                break;
+            case 'logout':
+                $this->processLogout();
+                break;
+            default:
+                $this->processAdminLogin();
                 break;
         }
     }
@@ -58,7 +73,37 @@ class AdminController {
     /****************************************************************
      * Process Request
      ***************************************************************/
+    private function processAdminLogin() {
+        if(!empty($_SESSION['admin-loggedin'])){
+            header("Location: .?action=admin_menu");
+        }else{
+            $username = '';
+            $password = '';
+            include '../view/admin/admin_login.php';
+        }
+    }
+    
+    private function processGetAdmin() {
+        $username = filter_input(INPUT_POST, 'username');
+        $password = filter_input(INPUT_POST, 'password');
+        $admin_table = new AdminTable($this->db);
+        $validUser = $admin_table->get_admin_by_username($username);
+        if (!isset($username) || $validUser==false) {
+            $error = "Invalid username";
+            include('../view/admin/admin_login.php');
+        } else if (!isset($password) || password_verify($password, $validUser['password']) == false) {
+            $error = "Invalid password";
+            include('../view/admin/admin_login.php');
+        } else {
+            $_SESSION['admin-loggedin'] = true;
+            $_SESSION['admin'] = $validUser;
+            header("Location: .?action=admin_menu");
+            
+        }
+    }
+    
     private function processAdminMenu() {
+        $successMessage = "You are logged in";
         include '../view/admin/admin_menu.php';
     }
     
@@ -85,6 +130,7 @@ class AdminController {
         $version = filter_input(INPUT_POST, 'version', FILTER_VALIDATE_FLOAT);
         $release_date = filter_input(INPUT_POST, 'release_date');
         
+        
         // Validate the inputs
         if ( $code === NULL || $name === FALSE ||
             $version === NULL || $version === FALSE ||
@@ -108,7 +154,7 @@ class AdminController {
         $customer_id = filter_input(INPUT_POST, 'customer_id', FILTER_VALIDATE_INT);
         $customer_table = new CustomerTable($this->db);
         $customer = $customer_table->get_customer($customer_id);
-        
+        $countries = $customer_table->get_countries();
         include '../view/admin/customer_display.php';
     }
     
@@ -125,11 +171,47 @@ class AdminController {
         $email = filter_input(INPUT_POST, 'email');
         $password = filter_input(INPUT_POST, 'password');
         
-        if (empty($last_name)) {
-            $error = 'You must enter a last name.';
-            include('../view/errors/error.php');
+        $fields = $this->validate->getFields();
+        $fields->addField('first_name');
+        $fields->addField('last_name');
+        $fields->addField('address');
+        $fields->addField('city');
+        $fields->addField('state');
+        $fields->addField('postal_code');
+        $fields->addField('phone');
+        $fields->addField('email');
+        $fields->addField('password');
+        $this->validate->setFields($fields);
+        $this->validate->text('first_name', $first_name,true, 1, 51);
+        $this->validate->text('last_name', $last_name,true, 1, 51);
+        $this->validate->text('address', $address,true, 1, 51);
+        $this->validate->text('city', $city,true, 1, 51);
+        $this->validate->text('state', $state,true, 1, 51);
+        $this->validate->text('postal_code', $postal_code,true, 1, 21);
+        $this->validate->phone('phone', $phone,true);
+        $this->validate->email('email', $email,true, 1, 51);
+        $this->validate->text('password', $password,true, 6, 21);
+        // Load appropriate view based on hasErrors
+        if ($fields->hasErrors()) {
+            $errors = array();
+            foreach($fields->getFields() as $field){
+                if($field->hasError()){
+                    $errors[$field->getName()] = $field->getHTML();
+                }
+            }
+            $customer_table = new CustomerTable($this->db);
+            $customer = $customer_table->get_customer($customer_id);
+            $countries = $customer_table->get_countries();
+            include '../view/admin/customer_display.php';  
         } else {
             $customer_table = new CustomerTable($this->db);
+            if($password == '******'){
+                //Get the old password
+                $customer = $customer_table->get_customer($customer_id);
+                $password = $customer['password'];
+            }else{
+                $password = password_hash($password, PASSWORD_DEFAULT);        
+            }
             $customer_table->update_customer($customer_id, $first_name, $last_name,
                 $address, $city, $state, $postal_code, $country_code,
                 $phone, $email, $password);
@@ -149,6 +231,18 @@ class AdminController {
         }
         include '../view/admin/customer_search.php';
     }
+    
+    private function processLogout() {
+        $_SESSION = array();
+        session_destroy();
+        $logout= 'You have been successfully logged out.';
+        $username = '';
+        $password = '';
+        include '../view/admin/admin_login.php';
+    }
+    
+    private function startSession() {
+        session_start();
+    }
 }
-
 ?>
