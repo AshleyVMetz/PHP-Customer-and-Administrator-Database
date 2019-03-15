@@ -42,6 +42,22 @@ class CustomerTable {
         return $customers;
     }
     
+    public function isValidLogin($email, $password) {
+        $query = 'SELECT customerID,password FROM customers
+              WHERE email = :email';
+        $statement = $this->db->getDB()->prepare($query);
+        $statement->bindValue(':email', $email);
+        $statement->execute();
+        $row = $statement->fetch();
+        $statement->closeCursor();
+        $hash = $row['password'];
+        if(password_verify($password, $hash)){
+            return $row['customerID'];
+        }else{
+            return false;
+        }
+    }
+    
     function update_customer($customer_id, $first_name, $last_name,
         $address, $city, $state, $postal_code, $country_code,
         $phone, $email, $password) {
@@ -71,6 +87,17 @@ class CustomerTable {
             $statement->bindValue(':customer_id', $customer_id);
             $statement->execute();
             $statement->closeCursor();
+    }
+    
+    
+    function get_countries() {
+        $query = 'SELECT * FROM countries
+              ORDER BY countryCode';
+        $statement = $this->db->getDB()->prepare($query);
+        $statement->execute();
+        $countries = $statement->fetchAll();
+        $statement->closeCursor();
+        return $countries;
     }
 }
 ?>
