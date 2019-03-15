@@ -89,7 +89,6 @@ class CustomerTable {
             $statement->closeCursor();
     }
     
-    
     function get_countries() {
         $query = 'SELECT * FROM countries
               ORDER BY countryCode';
