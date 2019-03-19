@@ -29,7 +29,17 @@
             <label>&nbsp;</label>
             <input type="submit" value="Register Product" />
         </form>
+     
     <?php endif; ?>
-
+		<?php if (isset($success)) : ?>
+        <p><?php echo $success; ?></p>
+        <?php endif; ?>
+         <form action="." method="post" id="aligned">
+            <input type="hidden" name="action" 
+                   value="logout">
+            <input type="hidden" name="customer_id" 
+                   value="<?php echo htmlspecialchars($customer['customerID']); ?>">
+            <input type="submit" value="Logout" />
+        </form>
 </main>
 <?php include '../view/shared/footer.php'; ?>

@@ -74,14 +74,11 @@ class AdminController {
      * Process Request
      ***************************************************************/
     private function processAdminLogin() {
-        if(!empty($_SESSION['admin-loggedin'])){
-            header("Location: .?action=admin_menu");
-        }else{
             $username = '';
             $password = '';
             include '../view/admin/admin_login.php';
         }
-    }
+    
     
     private function processGetAdmin() {
         $username = filter_input(INPUT_POST, 'username');
@@ -97,13 +94,13 @@ class AdminController {
         } else {
             $_SESSION['admin-loggedin'] = true;
             $_SESSION['admin'] = $validUser;
-            header("Location: .?action=admin_menu");
+            $successMessage = "You are logged in as $username";
+           include '../view/admin/admin_menu.php';
             
         }
     }
     
     private function processAdminMenu() {
-        $successMessage = "You are logged in";
         include '../view/admin/admin_menu.php';
     }
     
@@ -238,7 +235,7 @@ class AdminController {
         $logout= 'You have been successfully logged out.';
         $username = '';
         $password = '';
-        include '../view/admin/admin_login.php';
+        header("Location: /cs6252project2");
     }
     
     private function startSession() {

@@ -79,11 +79,7 @@ class CustomerController {
         } else {
             $error = 'Invalid username or password';
             include '../view/customer/customer_login.php';
-        }
-        
-        
-        
-        
+        } 
     }
     
     private function processRegisterProduct() {
