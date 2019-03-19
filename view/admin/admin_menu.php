@@ -12,8 +12,9 @@
     </ul>
     </nav>
     <h2>Login Status</h2>
+        <?php if (isset($successMessage)) : ?>
         <p><?php echo $successMessage; ?></p>
-      
+        <?php endif; ?>
          <form action="." method="post" id="aligned">
             <input type="hidden" name="action" 
                    value="logout">
